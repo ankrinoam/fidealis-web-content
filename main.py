@@ -66,7 +66,7 @@ def main():
         data = [theme]
         for element in elements_list:
             data.append(st.session_state.get(f"text_{element}", ""))
-        success, message = sauvegarder_contenu_google_sheet(client, "BlogPhilippe", data)  # Replace 'BlogPhilippe' with your actual Google Sheets name
+        success, message = sauvegarder_contenu_google_sheet(client, "fidealis web content", data)  # Replace 'BlogPhilippe' with your actual Google Sheets name
         if success:
             st.success("Le contenu modifié a été sauvegardé avec succès dans Google Sheets.")
         else:
