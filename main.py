@@ -34,27 +34,32 @@ def setup_google_sheets():
     return sheet
 
 def generer_et_sauvegarder_titres(openai_client, sheet, elements_list):
-    generated_titles = {}
     for index, element in enumerate(elements_list):
         with st.container():
             theme_key = f"theme_{element}_{index}"
             theme = st.text_input(f"Entrez le thème du blog pour {element}", key=theme_key)
-            if theme:  # generate title only if theme input is not empty
-                btn_generate_key = f"btn_generate_{element}_{index}"
-                if st.button(f'Générer le titre pour {element}', key=btn_generate_key):
+            btn_generate_key = f"btn_generate_{element}_{index}"
+            area_key = f"area_{element}_{index}"
+            # When the button is clicked, generate a title and keep it in the session state
+            if st.button(f'Générer le titre pour {element}', key=btn_generate_key):
+                if theme:  # Check if the theme is not empty
                     titre_genere = generer(theme, openai_client)
-                    generated_titles[theme_key] = titre_genere
-    
-    # Display generated titles for modification
-    for key, titre_genere in generated_titles.items():
-        st.text_area("Modifier le titre ici:", titre_genere, key=key)
+                    st.session_state[area_key] = titre_genere  # Store the generated title
 
-    # Button to save all modified titles to Google Sheets at the end
+            # If a title has been generated, show it in a text area for editing
+            if area_key in st.session_state:
+                st.text_area("Modifier le titre ici:", st.session_state[area_key], key=area_key)
+
+    # At the end, add a button to save all titles
     if st.button('Sauvegarder tous les titres'):
-        for key, titre_genere in generated_titles.items():
-            theme = st.session_state[key]
-            titre_modifie = st.session_state[key]
-            sauvegarder_contenu_google_sheet(theme, titre_modifie, sheet)
+        for index, element in enumerate(elements_list):
+            theme_key = f"theme_{element}_{index}"
+            area_key = f"area_{element}_{index}"
+            if theme_key in st.session_state and area_key in st.session_state:
+                # Retrieve the theme and the modified title to save
+                theme = st.session_state[theme_key]
+                titre_modifie = st.session_state[area_key]
+                sauvegarder_contenu_google_sheet(theme, titre_modifie, sheet)
         st.success("Tous les titres ont été sauvegardés avec succès dans Google Sheets.")
 
 def main():
