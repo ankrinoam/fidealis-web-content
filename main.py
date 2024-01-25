@@ -33,31 +33,36 @@ def setup_google_sheets():
     sheet = client.open("fidealis web content").sheet1
     return sheet
 
-# dans main.py
-
 def generer_et_sauvegarder_titres(openai_client, sheet, elements_list):
+    # Dictionnaire pour stocker les titres générés
+    generated_titles = {}
+
+    # Générerez tous les titres et contenus dès le premier titre saisi
+    trigger_key = "trigger_generation"
+    if st.button("Générer tout les titres et contenus", key=trigger_key):
+        for element in elements_list:
+            generated_titles[element] = generer(element, openai_client)
+
+    # Pour chaque élément, l'utilisateur peut modifier, régénérer ou sauvegarder individuellement
     for index, element in enumerate(elements_list):
         with st.container():
             theme_key = f"theme_{element}_{index}"
-            theme = st.text_input(f"Entrez le thème du blog pour {element}", key=theme_key)
-            btn_generate_key = f"btn_generate_{element}_{index}"
-            area_key = f"area_{element}_{index}"
-            if st.button(f'Générer le titre pour {element}', key=btn_generate_key):
-                if theme:  # generate title only if theme input is not empty
-                    titre_genere = generer(theme, openai_client)
-                    st.session_state[area_key] = titre_genere  # store the generated title in session state
-            if area_key in st.session_state:  # if a title has been generated, display it for editing
-                titre_modifie = st.text_area("Modifier le titre ici:", st.session_state[area_key], key=area_key) 
-                st.session_state[area_key] = titre_modifie  # update the title in session state
+            theme = generated_titles.get(element) or st.text_input(f"Entrez le thème du blog pour {element}", key=theme_key)
 
-    # bouton pour sauvegarder tous les titres en une seule fois
-    if st.button('Sauvegarder tous les titres'):
-        for index, element in enumerate(elements_list):
-            theme_key = f"theme_{element}_{index}"
+            # Possibilité de régénérer un titre/contenu individuellement
+            btn_regenerate_key = f"btn_regenerate_{element}_{index}"
+            if st.button(f'Régénérer le titre pour {element}', key=btn_regenerate_key):
+                generated_titles[element] = generer(theme, openai_client)
+
+            # Champs d'édition pour les titres/contenus
             area_key = f"area_{element}_{index}"
-            if theme_key in st.session_state and area_key in st.session_state:
-                sauvegarder_contenu_google_sheet(st.session_state[theme_key], st.session_state[area_key], sheet)
-        st.success('Tous les titres ont été sauvegardés avec succès dans Google Sheets.')
+            titre_modifie = st.text_area("Modifier le titre ici:", generated_titles.get(element, ""), key=area_key)
+
+            # Possibilité de sauvegarder un titre/contenu individuellement
+            btn_save_key = f"btn_save_{element}_{index}"
+            if st.button(f'Sauvegarder les modifications pour {element}', key=btn_save_key):
+                sauvegarder_contenu_google_sheet(theme, titre_modifie, sheet)
+                st.success(f"Le contenu modifié pour {element} a été sauvegardé avec succès dans Google Sheets.")
 
 
 
