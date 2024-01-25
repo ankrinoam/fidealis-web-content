@@ -33,6 +33,8 @@ def setup_google_sheets():
     sheet = client.open("fidealis web content").sheet1
     return sheet
 
+# dans main.py
+
 def generer_et_sauvegarder_titres(openai_client, sheet, elements_list):
     for index, element in enumerate(elements_list):
         with st.container():
@@ -40,27 +42,24 @@ def generer_et_sauvegarder_titres(openai_client, sheet, elements_list):
             theme = st.text_input(f"Entrez le thème du blog pour {element}", key=theme_key)
             btn_generate_key = f"btn_generate_{element}_{index}"
             area_key = f"area_{element}_{index}"
-            # When the button is clicked, generate a title and keep it in the session state
             if st.button(f'Générer le titre pour {element}', key=btn_generate_key):
-                if theme:  # Check if the theme is not empty
+                if theme:  # generate title only if theme input is not empty
                     titre_genere = generer(theme, openai_client)
-                    st.session_state[area_key] = titre_genere  # Store the generated title
+                    st.session_state[area_key] = titre_genere  # store the generated title in session state
+            if area_key in st.session_state:  # if a title has been generated, display it for editing
+                titre_modifie = st.text_area("Modifier le titre ici:", st.session_state[area_key], key=area_key) 
+                st.session_state[area_key] = titre_modifie  # update the title in session state
 
-            # If a title has been generated, show it in a text area for editing
-            if area_key in st.session_state:
-                st.text_area("Modifier le titre ici:", st.session_state[area_key], key=area_key)
-
-    # At the end, add a button to save all titles
+    # bouton pour sauvegarder tous les titres en une seule fois
     if st.button('Sauvegarder tous les titres'):
         for index, element in enumerate(elements_list):
             theme_key = f"theme_{element}_{index}"
             area_key = f"area_{element}_{index}"
             if theme_key in st.session_state and area_key in st.session_state:
-                # Retrieve the theme and the modified title to save
-                theme = st.session_state[theme_key]
-                titre_modifie = st.session_state[area_key]
-                sauvegarder_contenu_google_sheet(theme, titre_modifie, sheet)
-        st.success("Tous les titres ont été sauvegardés avec succès dans Google Sheets.")
+                sauvegarder_contenu_google_sheet(st.session_state[theme_key], st.session_state[area_key], sheet)
+        st.success('Tous les titres ont été sauvegardés avec succès dans Google Sheets.')
+
+
 
 def main():
     OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
