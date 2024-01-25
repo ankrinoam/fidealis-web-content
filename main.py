@@ -34,16 +34,21 @@ def setup_google_sheets():
     return sheet
 
 def generer_et_sauvegarder_titres(openai_client, sheet, elements_list):
-    for element in elements_list:
+    for index, element in enumerate(elements_list):
         with st.container():
-            theme = st.text_input(f"Entrez le thème du blog pour {element}", key=f"theme_{element}")
+            theme_key = f"theme_{element}_{index}"
+            theme = st.text_input(f"Entrez le thème du blog pour {element}", key=theme_key)
             if theme:  # generate title only if theme input is not empty
-                if st.button(f'Générer le titre pour {element}', key=f"btn_generate_{element}"):
+                btn_generate_key = f"btn_generate_{element}_{index}"
+                if st.button(f'Générer le titre pour {element}', key=btn_generate_key):
                     titre_genere = generer(theme, openai_client)
-                    titre_modifie = st.text_area("Modifier le titre ici:", titre_genere, key=f"area_{element}")
-                    if st.button(f'Sauvegarder les modifications pour {element}', key=f"btn_save_{element}"):
+                    area_key = f"area_{element}_{index}"
+                    titre_modifie = st.text_area("Modifier le titre ici:", titre_genere, key=area_key)
+                    btn_save_key = f"btn_save_{element}_{index}"
+                    if st.button(f'Sauvegarder les modifications pour {element}', key=btn_save_key):
                         sauvegarder_contenu_google_sheet(theme, titre_modifie, sheet)
                         st.success(f"Le contenu modifié pour {element} a été sauvegardé avec succès dans Google Sheets.")
+
 
 def main():
     OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
