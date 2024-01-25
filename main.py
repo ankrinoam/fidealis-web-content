@@ -30,7 +30,7 @@ def setup_google_sheets():
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name('index.json', scope)
     client = gspread.authorize(creds)
-    sheet = client.open("fidealis web content ").sheet1
+    sheet = client.open("fidealis web content").sheet1
     return sheet
 
 def generer_et_sauvegarder_titres(openai_client, sheet, elements_list):
