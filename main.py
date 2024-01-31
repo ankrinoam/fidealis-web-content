@@ -16,11 +16,11 @@ openai_client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 
 
 def setup_google_sheets():
-         scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-         creds = ServiceAccountCredentials.from_json_keyfile_name('index.json', scope)
-         client = gspread.authorize(creds)
-         sheet = client.open("BlogPhilippe").sheet1
+    scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+             "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name('/Users/noamankri/Desktop/pythonProject3/index.json', scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("BlogPhilippe").sheet1
     return sheet
 
 def generer_contenu(theme, section):
@@ -49,51 +49,51 @@ def generer_contenu(theme, section):
 
     return response_contenu.choices[0].message['content']
 
-def sauvegarder_contenu_google_sheet(theme, section, contenu):
-    sheet = setup_google_sheets()
-
-    # Dictionnaire associant chaque section à une ligne spécifique
-    lignes_sections = {
-        "Formule": 2,
-        "Titre 2": 3,
-        "Block renfort": 4,
-        "Block de 3 steps": 5,
-        "Titres 3": 6,
-        "Titre 4": 7,
-        "Titres final": 8
-    }
-
-    ligne = lignes_sections.get(section)
-
-    if ligne:
-        # Écrire le contenu dans la ligne spécifiée pour la section donnée
-        # La colonne A contient le thème, la colonne B la section, et la colonne C le contenu
-        sheet.update(f'A{ligne}:C{ligne}', [[theme, section, contenu]])
-        st.success(f"Le contenu pour '{section}' a été sauvegardé avec succès dans Google Sheets.")
-    else:
-        st.error("Section non reconnue. Impossible de sauvegarder.")
 
 
-# Interface Streamlit pour la génération de contenu
+
+sheet = setup_google_sheets()
+
+# Mapping des sections aux colonnes de la feuille Google Sheets
+section_to_col = {
+    "Formule": 'A',
+    "Titre 2": 'B',
+    "Block renfort": 'C',
+    "Block de 3 steps": 'D',
+    "Titres 3": 'E',
+    "Titre 4": 'F',
+    "Titres final": 'G'
+}
+
+
+# Interface Streamlit
 theme = st.text_input("Entrez le thème du blog")
-
 section = st.selectbox("Choisissez la section pour laquelle générer du contenu",
                        ["Formule", "Titre 2", "Block renfort", "Block de 3 steps", "Titres 3", "Titre 4",
                         "Titres final"])
 
-if st.button(f'Générer le contenu pour {section}'):
-    contenu_genere = generer_contenu(theme, section)
-    st.session_state['contenu_genere'] = contenu_genere
-    st.write(contenu_genere)
+if 'current_line' not in st.session_state:
+    st.session_state['current_line'] = 2  # Commence à la ligne 2
 
-# Zone de texte pour modification du contenu généré
-if 'contenu_genere' in st.session_state:
-    contenu_modifie = st.text_area("Modifier le contenu ici", value=st.session_state['contenu_genere'])
-else:
-    st.write("Veuillez générer du contenu pour une section.")
-if st.button('Sauvegarder les modifications', key='save_content'):
-    if 'contenu_genere' in st.session_state and theme and section:
-        # Assurez-vous de passer le contenu modifié `contenu_modifie` à la fonction de sauvegarde
-        sauvegarder_contenu_google_sheet(theme, section, contenu_modifie)
-    else:
-        st.error("Merci de générer du contenu avant de sauvegarder.")
+if st.button('Générer le contenu'):
+    generated_content = generer_contenu(theme, section)
+    st.session_state['contenu_genere'] = generated_content
+    st.text_area("Contenu généré", value=generated_content, height=300)
+
+contenu_modifie = st.text_area("Modifier/Ajouter du contenu ici", value=st.session_state.get('contenu_genere', ''))
+def sauvegarder_contenu(sheet, ligne, colonne, contenu):
+    cellule = f'{colonne}{ligne}'
+    sheet.update(cellule, [[contenu]])
+    st.success(f"Contenu sauvegardé dans la section '{section}' à la ligne '{ligne}'.")
+
+# Sauvegarder le contenu généré/modifié
+if st.button('Sauvegarder le contenu dans la feuille'):
+    colonne = section_to_col[section]  # Trouver la colonne correspondante à la section
+    sauvegarder_contenu(sheet, st.session_state['current_line'], colonne, contenu_modifie)
+
+# Passer à une nouvelle page
+if st.button('Nouvelle Page'):
+    st.session_state['current_line'] += 1
+    st.session_state.pop('contenu_genere', None)  # Réinitialiser le contenu généré pour la nouvelle page
+    st.info(f"Prêt pour la nouvelle page à la ligne {st.session_state['current_line']}.")
+
