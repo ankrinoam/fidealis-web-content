@@ -47,8 +47,7 @@ def generer_contenu(theme, section):
         max_tokens=1024
     )
 
-    return response_contenu.choices[0].message['content']
-
+    return response_contenu.choices[0].message.content
 
 
 
