@@ -18,7 +18,7 @@ openai_client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 def setup_google_sheets():
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name('/Users/noamankri/Desktop/pythonProject3/index.json', scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name('index.json', scope)
     client = gspread.authorize(creds)
     sheet = client.open("BlogPhilippe").sheet1
     return sheet
